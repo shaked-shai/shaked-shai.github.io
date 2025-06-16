@@ -226,6 +226,3 @@ jekyll-archives:
   permalinks:
     tag: /tags/:name/
     category: /categories/:name/
-
-favicon:
-  src: /assets/img/favicons/
