@@ -7,7 +7,7 @@ tags: [CTF,THM, write-up]
 ---
 
 # Pickle Rick CTF
-link: https://tryhackme.com/room/picklerick
+link: [https://tryhackme.com/room/picklerick](https://tryhackme.com/room/picklerick)
 
 This Rick and Morty-themed challenge requires you to exploit a web server and find three ingredients to help Rick make his potion and transform himself back into a human from a pickle.
 
@@ -18,7 +18,7 @@ the ip of my Target Machine is: `10.10.54.36` (yours will be different).
 so let's start with a [NMAP] scan:
 `nmap -sS -sV -O -v 10.10.54.36`
 
-Explanation: \
+Explanation:
 - -sS - SYN scan is the default and most popular scan option, It can be performed quickly, It is also relatively unobtrusive and stealthy since it never completes TCP connections
 - -sV - Enables version detection
 - -O - Enables OS detection
