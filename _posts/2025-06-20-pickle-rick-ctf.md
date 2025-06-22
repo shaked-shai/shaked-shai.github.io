@@ -43,9 +43,9 @@ So with 80 port open let's open a browser and go to `10.10.54.36:80`
 
 First let's check if there is something hidden in the html by opening dev-tools:
 
-![https://i.imgur.com/BSmwRua.png](https://i.imgur.com/BSmwRua.png)
+![https://i.imgur.com/hUtARqY.png](https://i.imgur.com/hUtARqY.png)
 There is a comment in the html giving us a username:
-`Username: R1ckRul3s`
+`Username: *********`
 
 Now that we have a user we need to find a password (maybe crack it or brut-force it?) and something to login to.
 
@@ -75,8 +75,8 @@ As we can see we have new leads:
 ```
 \
 Let's check out `/robots.txt`:
-![robots.txt](https://i.imgur.com/eRM88zo.png)
-So in the [robots.txt] we got `Wubbalubbadubdub` but we still not sure what to use it for and where....
+![robots.txt](https://i.imgur.com/RZ8L7iv.png)
+So in the [robots.txt] we got `****************` but we still not sure what to use it for and where....
 maybe it's a password?
 
 After trying to use this to connect to the [SSH] with: `ssh R1ckRul3s@10.10.54.36` I can see that the SSH is configured to use keys instead of passwords.
@@ -94,8 +94,8 @@ If those pictures are here, there must be a use for them (like `rickandmorty.jpe
 
 Let's try the username and the string we found in the robots.txt
 ```
-Username: R1ckRul3s
-Password: Wubbalubbadubdub
+Username: *********
+Password: ****************
 ```
 
 And we are in :D !!!
@@ -138,7 +138,7 @@ cut -c1- Sup3rS3cretPickl3Ingred.txt
 nl Sup3rS3cretPickl3Ingred.txt
 ```
 
-**~And we got the first flag (What is the first ingredient that Rick needs?)~**
+🚩**~And we got the first flag (What is the first ingredient that Rick needs?)~**🚩
 
 Also we see a file name `clue.txt` let see what clue we got:
 ```terminal
@@ -156,7 +156,7 @@ second ingredients
 
 And using `less '/home/rick/second ingredients'` 
 
-**~we got the second flag (What is the second ingredient in Rick’s potion?)~**
+🚩**~we got the second flag (What is the second ingredient in Rick’s potion?)~**🚩
 
 After looking around more the only place left to look at is `/root/` but we dont have the permissions to go in....
 
@@ -170,7 +170,7 @@ And it worked we have here the third flag!!
 
 `sudo less /root/3rd.txt`
 
-**~we got the third flag (What is the last and final ingredient?)~**
+🚩**~we got the third flag (What is the last and final ingredient?)~**🚩
 
 And that's it we helped Rick make his potion and transform himself back into a human from a pickle.
 
@@ -190,13 +190,13 @@ And now let's send the [reverse shell] to the server
 And we get a [reverse shell] to the machine that mean we don't have and limitations from the Rick Portal
 ```
 /var/www/html$ cat Sup3rS3cretPickl3Ingred.txt
-~first flag~
+🚩~first flag~🚩
 
 /var/www/html$ cat '/home/rick/second ingredients'
-~second flag~
+🚩~second flag~🚩
 
 /var/www/html$ sudo cat /root/3rd.txt
-~third flag~
+🚩~third flag~🚩
 ```
 
 \
