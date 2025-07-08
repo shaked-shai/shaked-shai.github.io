@@ -499,10 +499,199 @@ Alternatively, if `bash` isn’t available, we can try:
 🚩~flag found~🚩
 
 ## No Salt, No Shame (Crypto 1)
-coming soon...
+![](https://i.imgur.com/9N5rP8D.png)
+
+So after downloading the file, to get the flag we need to decrypt the record
+from the challenge description we know:
+- Cipher: `AES-CBC`
+- passphrase: `VIRELIA-WATER-FAC`
+- IV: `all-zero (i.e. 16 bytes of \x00)`
+- No salt or integrity checks
+
+AES-CBC with a passphrase suggests we first derive a key from the passphrase. Since the problem mentions “no salt,” they probably just hashed the passphrase directly into the key. A common approach is:
+* Key = HASH(passphrase)
+
+Because I don't know what kind of hashing algorithm they use, I wrote a script to try and test some of the most popular hashing algorithms and print out the result:
+```
+from Crypto.Cipher import AES
+from hashlib import md5, sha1, sha224, sha256, sha384, sha512
+import sys
+
+HASHES = {
+    "md5": md5,
+    "sha1": sha1,
+    "sha224": sha224,
+    "sha256": sha256,
+    "sha384": sha384,
+    "sha512": sha512,
+}
+
+KEY_SIZES = [16, 24, 32]  # AES-128, AES-192, AES-256
+
+PASS_PHRASE = b"VIRELIA-WATER-FAC"
+IV = b"\x00" * 16
+
+with open("shutdown.log-1750934543756.enc", "rb") as f:
+    ciphertext = f.read()
+
+for hash_name, hash_func in HASHES.items():
+    h = hash_func()
+    h.update(PASS_PHRASE)
+    full_digest = h.digest()
+
+    for key_size in KEY_SIZES:
+        key = full_digest[:key_size]
+
+        try:
+            cipher = AES.new(key, AES.MODE_CBC, IV)
+            plaintext = cipher.decrypt(ciphertext)
+
+            # Attempt to remove PKCS#7 padding
+            pad_len = plaintext[-1]
+            if pad_len > 0 and pad_len <= 16:
+                plaintext_clean = plaintext[:-pad_len]
+            else:
+                plaintext_clean = plaintext
+
+            print(f"==== {hash_name.upper()} (key size: {key_size} bytes) ====")
+            print(plaintext_clean.decode(errors="ignore"))
+            print("-" * 60)
+
+        except Exception as e:
+            print(f"Error with {hash_name} ({key_size} bytes): {e}")
+```
+![](https://i.imgur.com/CcGrY0d.png)
+
+by running the script we can see that the hash algorithm was: `sha256`.
+
+
+🚩~flag found~🚩
 
 ## Echoed Streams (Crypto 2)
-coming soon...
+![](https://i.imgur.com/TLFukgW.png)
+
+This is a classic GCM nonce-reuse attack scenario.
+here what we have:
+- Two AES-GCM packets, both encrypted under:
+    - same AES key
+    - same 16-byte nonce
+
+File structure:
+```
+[16 bytes nonce] || [96 bytes ciphertext] || [16 bytes tag]
+```
+The first packet plaintext known and fixed:
+```
+BEGIN TELEMETRY VIRELIA;ID=ZTRX0110393939DC;PUMP1=OFF;VALVE1=CLOSED;PUMP2=ON;VALVE2=CLOSED;END;
+```
+
+The second packet plaintext is unknown and contains a kill-switch and the flag.
+
+so how can we solve this and get the flag
+`AES-GCM` is a mode of encryption that is stream-based (like a one-time pad)
+If you encrypt two messages under the same nonce and same key:
+```
+C1 = P1 ⊕ keystream
+C2 = P2 ⊕ keystream
+```
+So:
+```
+C1 ⊕ C2 = P1 ⊕ keystream ⊕ P2 ⊕ keystream = P1 ⊕ P2
+```
+So:
+```
+P2 = P1 ⊕ (C1 ⊕ C2)
+```
+Because you know:
+- P1 (the telemetry plaintext)
+- C1
+- C2
+
+Therefore we can recover P2 without knowing the key!
+for doing so i used a python script:
+```python
+# known telemetry plaintext
+p1_plaintext = b"BEGIN TELEMETRY VIRELIA;ID=ZTRX0110393939DC;PUMP1=OFF;VALVE1=CLOSED;PUMP2=ON;VALVE2=CLOSED;END;"
+
+with open("cipher1.bin", "rb") as f:
+    data1 = f.read()
+
+with open("cipher2.bin", "rb") as f:
+    data2 = f.read()
+
+# parse files
+nonce1 = data1[0:16]
+c1 = data1[16:112]        # 96 bytes
+tag1 = data1[112:128]
+
+nonce2 = data2[0:16]
+c2 = data2[16:112]        # 96 bytes
+tag2 = data2[112:128]
+
+# check nonce reuse
+assert nonce1 == nonce2, "Different nonces, cannot proceed!"
+
+# C1 XOR C2
+delta = bytes(a ^ b for a, b in zip(c1, c2))
+
+# P2 = P1 XOR delta
+p2 = bytes(a ^ b for a, b in zip(p1_plaintext, delta))
+
+# Print result
+print(p2.decode(errors="ignore"))
+```
+
+### step 1 - Extract the Ciphertexts:
+Each file:
+```
+[16 bytes nonce][96 bytes ciphertext][16 bytes tag]
+```
+- Offset 0:16 = nonce
+- Offset 16:112 = ciphertext
+- Offset 112:128 = GCM tag
+
+
+### step 2 - Compute P2
+Since:
+```
+P2 = P1 ⊕ (C1 ⊕ C2)
+```
+Steps:
+- extract nonce, c1, c2
+- XOR c1 and c2 → ΔC
+- XOR ΔC with P1 → recover P2
+
+![](https://i.imgur.com/hWhmtsl.png)
+
+🚩~flag found~🚩
 
 ## Start (pwn 1)
-coming soon...
+![](https://i.imgur.com/1St4g6X.png)
+
+After downloading the file and open it using `Binary-ninja` we can see the source code of the remote server, and find a way to bypass the username validation:
+![](https://i.imgur.com/TMsHQ5f.png)
+
+looking at the main we see a var_c the set to 0 and a buf with size 0x2c (44), in the stack we can see that the buf is 44 bytes under the var_c and when we write 45 chars (every char is one byte) we can overwrite the var_c using `buffer overflow` and bypass the if condition
+
+```
+            High addresses
+          -------------------
+          |     ...         |
+          -------------------
+RSP+0x0 → | Return Address  |
+          -------------------
+RSP-0x8 → | Saved RBP       |
+          -------------------
+RSP-0xc → | var_c           |  <--- variable to overwrite
+          -------------------
+RSP-0x38→ | buf[43]         |
+          | buf[42]         |
+          | ...             |
+          | buf[0]          |
+          -------------------
+```
+Therefore when we send 45 A's we get the flag:
+
+![](https://i.imgur.com/PwZeIZo.png)
+
+🚩~flag found~🚩
