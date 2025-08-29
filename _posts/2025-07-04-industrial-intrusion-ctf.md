@@ -2,6 +2,8 @@
 layout: post
 title: Industrial Intrusion CTF
 date: 2025-07-04 22:05 +0300
+categories: [CTF,THM]
+tags: [CTF,THM, write-up]
 ---
 
 # Industrial Intrusion CTF

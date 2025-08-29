@@ -1,12 +1,12 @@
 ---
 layout: post
-title: Pickle Rick CTF
+title: Pickle Rick Challenge
 date: 2025-06-20 23:47 +0300
-categories: [CTF,THM]
-tags: [CTF,THM, write-up]
+categories: [Challenge,THM]
+tags: [Challenge,THM, write-up]
 ---
 
-# Pickle Rick CTF
+# Pickle Rick Challenge
 link: [https://tryhackme.com/room/picklerick](https://tryhackme.com/room/picklerick)
 
 This Rick and Morty-themed challenge requires you to exploit a web server and find three ingredients to help Rick make his potion and transform himself back into a human from a pickle.
@@ -175,7 +175,7 @@ And it worked we have here the third flag!!
 And that's it we helped Rick make his potion and transform himself back into a human from a pickle.
 
 
-## Alternative way to solve the CTF
+## Alternative way to solve the challenge
 
 After getting into Rick Portal we can generate a [reverse shell] to make our life easer using our own shell:
 
